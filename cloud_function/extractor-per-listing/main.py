@@ -39,6 +39,9 @@ storage_client = storage.Client()
 PRICE_RE      = re.compile(r"\$\s?([0-9,]+)")
 YEAR_RE       = re.compile(r"\b(19|20)\d{2}\b")
 MAKE_MODEL_RE = re.compile(r"\b([A-Z][a-z]+)\s+([A-Z][A-Za-z0-9]+)")
+TITLE_RE        = re.compile(r"\b(clean|rebuilt|salvage|lien|parts only)\b", re.I) # NEW! adds title
+COLOR_RE        = re.compile(r"\b(black|white|silver|gray|grey|red|blue|green|yellow|orange|brown|gold|beige|purple|maroon|burgundy|champagne|pearl)\b", re.I) # NEW! Adds car color. NOTE: this only captures the first color, so "black exterior red interior" will only capture black, not red interior.
+TRANS_RE        = re.compile(r"\b(automatic|auto|manual|stick shift|CVT|DCT)\b", re.I) # NEW! adds vehicle transmission
 
 # -------------------- HELPERS --------------------
 def _list_run_ids(bucket: str, scrapes_prefix: str) -> list[str]:
@@ -148,7 +151,26 @@ def parse_listing(text: str) -> dict:
             except ValueError: mi = None
     if mi is not None:
         d["mileage"] = mi
+    # title status
+    t = TITLE_RE.search(text)
+    if t:
+        d["title_status"] = t.group(0).lower()
 
+    # exterior color
+    c = COLOR_RE.search(text)
+    if c:
+        d["color"] = c.group(0).lower()
+
+    # transmission
+    tr = TRANS_RE.search(text)
+    if tr:
+        raw = tr.group(0).lower()
+        if raw in ("automatic", "auto"):
+            d["transmission"] = "automatic"
+        elif raw in ("manual", "stick shift"):
+            d["transmission"] = "manual"
+        else:
+            d["transmission"] = raw  # catches CVT, DCT, etc.
     return d
 
 # -------------------- HTTP ENTRY --------------------
