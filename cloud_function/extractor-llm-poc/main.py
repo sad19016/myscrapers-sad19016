@@ -156,7 +156,7 @@ def _safe_int(x):
 # -------------------- VERTEX AI CALL --------------------
 def _vertex_extract_fields(raw_text: str) -> dict:
     """
-    Ask Gemini to return JSON with exactly: price, year, make, model, mileage.
+    Ask Gemini to return JSON with exactly: price, year, make, model, mileage, color, transmission, fuel type, number of cylinders.
     """
     model = _get_vertex_model()
 
@@ -169,8 +169,12 @@ def _vertex_extract_fields(raw_text: str) -> dict:
             "make": {"type": "string", "nullable": True},
             "model": {"type": "string", "nullable": True},
             "mileage": {"type": "integer", "nullable": True},
+            "color": {"type": "string", "nullable": True},
+            "transmission": {"type": "string", "nullable": True},
+            "fuel_type": {"type": "string", "nullable": True},
+            "number_of_cylinders": {"type": "integer", "nullable": True},
         },
-        "required": ["price", "year", "make", "model", "mileage"]
+        "required": ["price", "year", "make", "model", "mileage", "color", "transmission", "fuel_type", "number_of_cylinders"]
     }
 
     # System instruction (will be prepended to the prompt)
@@ -178,7 +182,7 @@ def _vertex_extract_fields(raw_text: str) -> dict:
         "Extract ONLY the following fields from the input text. "
         "Return a strict JSON object that conforms to the provided schema. "
         "If a value is not present, use null. "
-        "Rules: integers for price/year/mileage; price in USD; mileage in miles; "
+        "Rules: integers for price/year/mileage; price in USD; mileage in miles; color is the exterior car color common colors are red, white, black, silver, grey or gray, blue, green, gold; transmission is the vehicle's transmission type, this could be manual, automatic, and get specific like DCT or CVT' fuel_type is the car's fuel type, which is usually diesel or gasoline; number_of_cylinders is the car's engine's number of cylinders, usually ranging from 4 to 12; "
         "do not infer values not explicitly present; do not add extra keys."
     )
 
@@ -318,6 +322,10 @@ def llm_extract_http(request: Request):
                 "make": parsed.get("make"),
                 "model": parsed.get("model"),
                 "mileage": parsed.get("mileage"),
+                "color": parsed.get("color"),
+                "transmission": parsed.get("transmission"),
+                "fuel_type": parsed.get("fuel_type"),
+                "number_of_cylinders": parsed.get("number_of_cylinders"),
                 "llm_provider": "vertex",
                 "llm_model": LLM_MODEL,
                 "llm_ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
