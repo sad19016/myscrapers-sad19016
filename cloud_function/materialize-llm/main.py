@@ -8,7 +8,7 @@ import io
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Iterable
 
 from flask import Request, jsonify
@@ -106,6 +106,12 @@ def materialize_http(request: Request):
         run_ids = _list_run_ids(BUCKET_NAME, STRUCTURED_PREFIX)
         if not run_ids:
             return jsonify({"ok": False, "error": f"no runs found under {STRUCTURED_PREFIX}/"}), 200
+        
+        # Only process runs from the past hour to avoid timeout on large datasets
+        cutoff_dt = datetime.now(timezone.utc) - timedelta(hours=1)
+        run_ids = [r for r in run_ids if _run_id_to_dt(r) >= cutoff_dt]
+        if not run_ids:
+            return jsonify({"ok": False, "error": "no runs found in the past hour"}), 200
 
         latest_by_post: Dict[str, Dict] = {}
         for rid in run_ids:
