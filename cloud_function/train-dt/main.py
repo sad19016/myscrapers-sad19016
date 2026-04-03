@@ -120,6 +120,7 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
 
     # Adding Permutation Importance
     from sklearn.inspection import permutation_importance
+    perm = permutation_importance(pipe, X_train, y_train, n_repeats=10, random_state=67, scoring="neg_mean_absolute_error")
     num_feature_names = num_cols
     cat_feature_names = list(pipe.named_steps["pre"].transformers_[1][1].named_steps["oh"].get_feature_names_out())
     feature_names = num_feature_names + cat_feature_names
