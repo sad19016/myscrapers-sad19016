@@ -22,14 +22,14 @@ env:
   BUCKET_NAME: ${{ vars.BUCKET_NAME }}
   TIMEOUT_SECONDS: "900"
   MEMORY: "2Gi"
-  DATA_KEY: "structured/datasets/listings_master.csv"
+  DATA_KEY: "structured/datasets/listings_master_llm.csv"
   OUTPUT_PREFIX: "structured/preds"
   # Align with your other workflows
   RUNTIME_SA: ${{ vars.RUNTIME_SA }}                 # function runtime SA (email)
   DEPLOYER_SA: ${{ vars.DEPLOYER_SA }}               # GitHub deploy SA (email)
   WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
-  SCHEDULE_BODY: ${{ vars.TRAIN_DT_BODY ||'{"dry_run":true}'}}
-  CRON_EXPR: "20 * * * *"                             # :20 each hour (ET)
+  SCHEDULE_BODY: ${{ vars.TRAIN_DT_BODY ||'{"dry_run":false}'}} # Changed dry_run to false
+  CRON_EXPR: "20 10 * * *"                             # 10:20am each day (ET)
 
 jobs:
   deploy:
@@ -141,11 +141,11 @@ jobs:
             exit 1
           fi
 
-      - name: Create/Update Cloud Scheduler job (:20 ET, OIDC)
+      - name: Create/Update Cloud Scheduler job (10:20am ET daily, OIDC) # Changed naming to daily at new time
         shell: bash
         run: |
           set -euo pipefail
-          JOB_NAME="${FUNCTION_NAME}-hourly"
+          JOB_NAME="${FUNCTION_NAME}-daily"
           URL="${{ steps.cfurl.outputs.url }}"
           [[ -z "${URL}" ]] && { echo "Function URL empty"; exit 1; }
 

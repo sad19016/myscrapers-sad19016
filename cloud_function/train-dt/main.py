@@ -62,6 +62,7 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
     df["price_num"]   = _clean_numeric(df["price"])
     df["year_num"]    = _clean_numeric(df["year"])
     df["mileage_num"] = _clean_numeric(df["mileage"])
+    df["number_of_cylinders"] = _clean_numeric(df["number_of_cylinders"])
 
     valid_price_rows = int(df["price_num"].notna().sum())
     logging.info("Rows total=%d | with valid numeric price=%d", orig_rows, valid_price_rows)
@@ -87,8 +88,8 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
 
     # --- Model: make, model, year_num, mileage_num -> price_num ---
     target = "price_num"
-    cat_cols = ["make", "model"]
-    num_cols = ["year_num", "mileage_num"]
+    cat_cols = ["make", "model", "color", "transmission", "fuel_type", "body_type", "condition", "city", "state"] # Added new fields
+    num_cols = ["year_num", "mileage_num", "number_of_cylinders"] # Added new field
     feats = cat_cols + num_cols
 
     pre = ColumnTransformer(
@@ -106,7 +107,52 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
 
     X_train = train_df[feats]
     y_train = train_df[target]
-    pipe.fit(X_train, y_train)
+    from sklearn.model_selection import GridSearchCV # Adding hyperparameter tuning
+    param_grid = {
+        "model__max_depth": [4, 6, 8, 12],
+        "model__min_samples_leaf": [5, 10, 20],
+    }
+    search = GridSearchCV(pipe, param_grid, cv=3, scoring="neg_mean_absolute_error", n_jobs=-1)
+    search.fit(X_train, y_train)
+    now_utc = pd.Timestamp.utcnow().tz_convert("UTC")
+    pipe = search.best_estimator_
+    logging.info("Best params: %s", search.best_params_)
+
+    # Adding Permutation Importance
+    from sklearn.inspection import permutation_importance
+    perm = permutation_importance(pipe, X_train, y_train, n_repeats=10, random_state=67, scoring="neg_mean_absolute_error")
+    feature_names = num_cols + list(pipe.named_steps["pre"].transformers_[1][1].named_steps["oh"].get_feature_names_out(cat_cols))
+    perm_df = pd.DataFrame({
+        "feature": feature_names,
+        "importance_mean": perm.importances_mean,
+        "importance_std": perm.importances_std,
+    }).sort_values("importance_mean", ascending=False)
+    perm_key = f"{OUTPUT_PREFIX}/{now_utc.strftime('%Y%m%d%H')}/permutation_importance.csv"
+    if not dry_run:
+        _write_csv_to_gcs(client, GCS_BUCKET, perm_key, perm_df)
+        logging.info("Wrote permutation importance to gs://%s/%s", GCS_BUCKET, perm_key)
+
+    # Adding PDP plots
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from sklearn.inspection import PartialDependenceDisplay
+
+    top3_features = perm_df["feature"].iloc[:3].tolist()
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+    PartialDependenceDisplay.from_estimator(pipe, X_train, top3_features, ax=axes)
+    plt.suptitle("Partial Dependence plots - Top 3 Features")
+    plt.tight_layout()
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    pdp_key = f"{OUTPUT_PREFIX}/{now_utc.strftime('%Y%m%d%H')}/pdp_top3.png"
+    if not dry_run:
+        b = client.bucket(GCS_BUCKET)
+        b.blob(pdp_key).upload_from_file(buf, content_type="image/png")
+        logging.info("Wrote PDP plot to gs://%s/%s", GCS_BUCKET, pdp_key)
+    plt.close()
 
     # ---- Predict/evaluate on today's holdout (now includes actual price fields) ----
     mae_today = None
@@ -127,7 +173,8 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
                 mae_today = float(mean_absolute_error(y_true[mask], y_hat[mask]))
 
     # --- Output path: HOURLY folder structure ---
-    now_utc = pd.Timestamp.utcnow().tz_convert("UTC")
+    # now_utc = pd.Timestamp.utcnow().tz_convert("UTC")
+    # ^ Had to move this to right after search.fit
     out_key = f"{OUTPUT_PREFIX}/{now_utc.strftime('%Y%m%d%H')}/preds.csv"
 
     if not dry_run and len(preds_df) > 0:
@@ -144,6 +191,9 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
         "valid_price_rows": valid_price_rows,
         "mae_today": mae_today,
         "output_key": out_key,
+        "perm_key": perm_key,
+        "pdp_key": pdp_key,
+        "best_params": search.best_params_, 
         "dry_run": dry_run,
         "timezone": TIMEZONE,
     }
