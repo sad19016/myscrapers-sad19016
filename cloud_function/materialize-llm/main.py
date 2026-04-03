@@ -109,10 +109,11 @@ def materialize_http(request: Request):
             return jsonify({"ok": False, "error": f"no runs found under {STRUCTURED_PREFIX}/"}), 200
         
         # Only process runs from the past hour to avoid timeout on large datasets
-        cutoff_dt = datetime.now(timezone.utc) - timedelta(hours=1)
-        run_ids = [r for r in run_ids if _run_id_to_dt(r) >= cutoff_dt]
-        if not run_ids:
-            return jsonify({"ok": False, "error": "no runs found in the past hour"}), 200
+        # cutoff_dt = datetime.now(timezone.utc) - timedelta(hours=1)
+        # run_ids = [r for r in run_ids if _run_id_to_dt(r) >= cutoff_dt]
+        # if not run_ids:
+        #     return jsonify({"ok": False, "error": "no runs found in the past hour"}), 200
+        # Commenting out this section in order to gather data. Will consider bringing this back later.
 
         latest_by_post: Dict[str, Dict] = {}
         for rid in run_ids:
