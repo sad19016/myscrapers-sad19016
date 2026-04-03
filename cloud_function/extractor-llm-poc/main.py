@@ -173,8 +173,12 @@ def _vertex_extract_fields(raw_text: str) -> dict:
             "transmission": {"type": "string", "nullable": True},
             "fuel_type": {"type": "string", "nullable": True},
             "number_of_cylinders": {"type": "integer", "nullable": True},
+            "body_type": {"type": "string", "nullable": True},
+            "condition": {"type": "string", "nullable": True},
+            "city": {"type": "string", "nullable": True},
+            "state": {"type": "string", "nullable": True},
         },
-        "required": ["price", "year", "make", "model", "mileage", "color", "transmission", "fuel_type", "number_of_cylinders"]
+        "required": ["price", "year", "make", "model", "mileage", "color", "transmission", "fuel_type", "number_of_cylinders", "city", "state"]
     }
 
     # System instruction (will be prepended to the prompt)
@@ -183,6 +187,7 @@ def _vertex_extract_fields(raw_text: str) -> dict:
         "Return a strict JSON object that conforms to the provided schema. "
         "If a value is not present, use null. "
         "Rules: integers for price/year/mileage; price in USD; mileage in miles; color is the exterior car color common colors are red, white, black, silver, grey or gray, blue, green, gold; transmission is the vehicle's transmission type, this could be manual, automatic, and get specific like DCT or CVT' fuel_type is the car's fuel type, which is usually diesel or gasoline; number_of_cylinders is the car's engine's number of cylinders, usually ranging from 4 to 12; "
+        "Additional Rules: body type should be classified as the car style. For example, coupe, sedan, truck, van, etc. Condition should be broad and concise, like great, bad, roller/shell, part-out. City and State should be the city and state where the listing is based out of."
         "do not infer values not explicitly present; do not add extra keys."
     )
 
@@ -326,6 +331,10 @@ def llm_extract_http(request: Request):
                 "transmission": parsed.get("transmission"),
                 "fuel_type": parsed.get("fuel_type"),
                 "number_of_cylinders": parsed.get("number_of_cylinders"),
+                "body_type": parsed.get("body_type"),
+                "condition": parsed.get("condition"),
+                "city": parsed.get("city"),
+                "state": parsed.get("state"),
                 "llm_provider": "vertex",
                 "llm_model": LLM_MODEL,
                 "llm_ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
