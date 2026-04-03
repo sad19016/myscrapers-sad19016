@@ -96,7 +96,7 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
         transformers=[
             ("num", SimpleImputer(strategy="median"), num_cols),
             ("cat", Pipeline([
-                ("imp", SimpleImputer(strategy="most_frequent")),
+                ("imp", SimpleImputer(strategy="constant", fill_value="unknown")),
                 ("oh", OneHotEncoder(handle_unknown="ignore"))
             ]), cat_cols),
         ]
