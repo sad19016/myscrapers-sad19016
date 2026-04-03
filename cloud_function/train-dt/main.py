@@ -140,24 +140,10 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
     import matplotlib.pyplot as plt
     from sklearn.inspection import PartialDependenceDisplay
 
-    # Map top 3 features back to original feature indices for PDP
-    # PDP needs original feature names, not OHE encoded names
-    top3_original = []
-    for feat in perm_df["feature"].iloc[:10].tolist():
-        # Extract original feature name from OHE name (e.g. x1_Toyota -> model)
-        for i, col in enumerate(feats):
-            if feat.startswith(f"x{cat_cols.index(col)}_") or feat == col:
-                if col not in top3_original:
-                    top3_original.append(col)
-            if len(top3_original) == 3:
-                break
-        if len(top3_original) == 3:
-            break
-    # Fallback to numeric features if mapping fails
-    if not top3_original:
-        top3_original = num_cols[:3]
+    # Use numeric features for PDP as they work reliably with the pipeline
+    pdp_features = num_cols[:3]
     fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-    PartialDependenceDisplay.from_estimator(pipe, X_train, top3_original, ax=axes)
+    PartialDependenceDisplay.from_estimator(pipe, X_train, pdp_features, ax=axes)
     plt.suptitle("Partial Dependence plots - Top 3 Features")
     plt.tight_layout()
 
