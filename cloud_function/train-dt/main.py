@@ -120,10 +120,11 @@ def run_once(dry_run: bool = False, max_depth: int = 12, min_samples_leaf: int =
 
     # Adding Permutation Importance
     from sklearn.inspection import permutation_importance
-    perm = permutation_importance(pipe, X_train, y_train, n_repeats=10, random_state=67, scoring="neg_mean_absolute_error")
-    feature_names = num_cols + list(pipe.named_steps["pre"].transformers_[1][1].named_steps["oh"].get_feature_names_out())
+    num_feature_names = num_cols
+    cat_feature_names = list(pipe.named_steps["pre"].transformers_[1][1].named_steps["oh"].get_feature_names_out())
+    feature_names = num_feature_names + cat_feature_names
     perm_df = pd.DataFrame({
-        "feature": feature_names,
+        "feature": feature_names[:len(perm.importances_mean)],
         "importance_mean": perm.importances_mean,
         "importance_std": perm.importances_std,
     }).sort_values("importance_mean", ascending=False)
