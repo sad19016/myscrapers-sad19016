@@ -2,7 +2,7 @@ name: Data Sync Daily Predictions to Repo
 run-name: Syncing daily predictions for ${{ github.ref_name }} by @${{ github.actor }} 
 on:
   schedule:
-    - cron: '45 10 * * *' # Daily at 10:45am ET
+    - cron: '45 14 * * *' # Daily at 10:45am ET (14:45 UTC, since this is in github and not GCP, it uses UTC. I found out the hard way!)
   workflow_dispatch: 
 
 permissions:
