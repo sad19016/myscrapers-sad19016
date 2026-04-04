@@ -41,33 +41,33 @@ jobs:
 
       # --- 2. DOWNLOAD AND RENAME DATA ---
       - name: Find Latest Run ID, Download, and Rename Files
-              id: download_rename
-              shell: bash
-              run: |
-                set -euo pipefail
-                
-                # Find the LATEST folder in GCS
-                LATEST_RUN_DIR=$(gsutil ls -d gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/*/ | tail -1)
-                LATEST_RUN_ID=$(echo "$LATEST_RUN_DIR" | sed -E "s|gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/||; s|/||")
-                
-                echo "run_id=$LATEST_RUN_ID" >> "$GITHUB_OUTPUT"
-                echo "Detected latest run ID: $LATEST_RUN_ID"
-                
-                mkdir -p ${{ env.OUTPUT_DIR }}
-                
-                # Download preds.csv
-                gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/preds.csv \
-                  ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-preds.csv
-                
-                # Download permutation_importance.csv
-                gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/permutation_importance.csv \
-                  ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-permutation_importance.csv
-                
-                # Download pdp_top3.png
-                gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/pdp_top3.png \
-                  ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-pdp_top3.png
-                
-                echo "Successfully downloaded all artifacts for run $LATEST_RUN_ID"
+        id: download_rename
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          # Find the LATEST folder in GCS
+          LATEST_RUN_DIR=$(gsutil ls -d gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/*/ | tail -1)
+          LATEST_RUN_ID=$(echo "$LATEST_RUN_DIR" | sed -E "s|gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/||; s|/||")
+          
+          echo "run_id=$LATEST_RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "Detected latest run ID: $LATEST_RUN_ID"
+          
+          mkdir -p ${{ env.OUTPUT_DIR }}
+          
+          # Download preds.csv
+          gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/preds.csv \
+            ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-preds.csv
+          
+          # Download permutation_importance.csv
+          gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/permutation_importance.csv \
+            ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-permutation_importance.csv
+          
+          # Download pdp_top3.png
+          gsutil cp gs://${BUCKET_NAME}/${GCS_PREDS_PREFIX}/$LATEST_RUN_ID/pdp_top3.png \
+            ${{ env.OUTPUT_DIR }}/$LATEST_RUN_ID-pdp_top3.png
+          
+          echo "Successfully downloaded all artifacts for run $LATEST_RUN_ID"
 
       # --- 3. COMMIT AND PUSH ---
       - name: Commit and Push New Timestamped File
