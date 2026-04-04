@@ -79,8 +79,6 @@ jobs:
           # Retrieve variables from the previous step's output
           FILENAME="${{ steps.download_rename.outputs.filename }}"
           RUN_ID="${{ steps.download_rename.outputs.run_id }}"
-          
-          RUN_ID="${{ steps.download_rename.outputs.run_id }}"
           git add ${{ env.OUTPUT_DIR }}/$RUN_ID-preds.csv
           git add ${{ env.OUTPUT_DIR }}/$RUN_ID-permutation_importance.csv
           git add ${{ env.OUTPUT_DIR }}/$RUN_ID-pdp_top3.png
