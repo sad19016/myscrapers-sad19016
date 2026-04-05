@@ -1,0 +1,13 @@
+feature,importance_mean,importance_std
+x0_Chevrolet,3929.7926421098737,453.83865400910463
+x0_Cadillac,3586.3761068594104,241.92365802768725
+number_of_cylinders,925.8980333951768,164.01142269419108
+x0_Acura,338.34282196969696,92.52143856790957
+x0_ACURA,0.0,0.0
+mileage_num,0.0,0.0
+year_num,0.0,0.0
+x0_Audi,0.0,0.0
+x0_Buick,0.0,0.0
+x0_BMW,0.0,0.0
+x0_CHEVROLET,0.0,0.0
+x0_Chevy,0.0,0.0
